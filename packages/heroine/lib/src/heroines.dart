@@ -155,6 +155,49 @@ class _HeroineState extends State<Heroine> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final flight = _manifest;
+    final stableKey = GlobalObjectKey(widget.tag);
+
+    // 1. CHECK OWNERSHIP (The Safe Fix)
+    // We need to determine if the key is currently held by another Heroine.
+    bool keyIsLockedByOther = false;
+
+    if (stableKey.currentContext != null) {
+      // If the context exists but is unmounted, we ignore it (it's free).
+      if (stableKey.currentContext!.mounted) {
+        try {
+          // We try to find the owner.
+          // If this throws "Looking up a deactivated widget's ancestor is unsafe",
+          // it means the previous owner is dying (popping route).
+          // In that case, the catch block will leave keyIsLockedByOther = false,
+          // effectively claiming the key for ourselves.
+          final keyOwner = stableKey.currentContext
+              ?.findAncestorStateOfType<_HeroineState>();
+
+          if (keyOwner != null && keyOwner != this) {
+            keyIsLockedByOther = true;
+          }
+        } catch (e) {
+          // The previous owner is deactivated/dying.
+          // Treat the key as free to claim.
+          keyIsLockedByOther = false;
+        }
+      }
+    }
+
+    // 2. HANDLE FLIGHT (Release logic)
+    final bool isFlying = flight != null &&
+        (flight.fromHero == this || flight.toHero == this) &&
+        _sleightOfHand == null;
+
+    if (isFlying) {
+      return SizedBox.fromSize(size: _placeholderSize);
+    }
+
+    // 3. WRAP CHILD (Conditionally)
+    final childContent = keyIsLockedByOther
+        ? widget.child
+        : KeyedSubtree(key: stableKey, child: widget.child);
+
     if (flight != null &&
         widget.placeholderBuilder != null &&
         _placeholderSize != null) {
@@ -165,18 +208,12 @@ class _HeroineState extends State<Heroine> with TickerProviderStateMixin {
       );
     }
 
-    if (flight != null && _showsEmptyPlaceholderForFlight(flight)) {
-      return SizedBox.fromSize(
-        size: _placeholderSize,
-      );
-    }
-
     return _SleightOfHandBuilder(
       globalKey: _key,
       placeholderSize: _placeholderSize,
       sleightOfHand: _sleightOfHand,
       manifest: _manifest,
-      child: widget.child,
+      child: childContent,
     );
   }
 

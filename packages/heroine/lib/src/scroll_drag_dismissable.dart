@@ -118,10 +118,13 @@ class _ScrollDragDismissableState extends State<ScrollDragDismissable> {
     return ScrollDragDetector(
       scrollableCanMoveBack: widget.scrollableCanMoveBack,
       onlyDragWhenScrollWasAtTop: widget.onlyDragWhenScrollWasAtTop,
-      onVerticalDragStart: widget._disabled ? null : _start,
-      onVerticalDragUpdate: widget._disabled ? null : _update,
-      onVerticalDragCancel: widget._disabled ? null : _cancel,
-      onVerticalDragEnd: widget._disabled ? null : _end,
+      onVerticalDragStart: (details, didScroll) =>
+          widget._disabled ? null : _start(details),
+      onVerticalDragUpdate: (details, didScroll) =>
+          widget._disabled ? null : _update(details),
+      onVerticalDragEnd: (details, didScroll) =>
+          widget._disabled ? null : _end(details),
+      onVerticalDragCancel: _cancel,
       child: MotionBuilder(
         active: _dragStartOffset == null,
         motion: widget.motion,

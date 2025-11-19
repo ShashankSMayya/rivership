@@ -17,7 +17,7 @@ dependencies:
   flutter:
     sdk: flutter
   motor: ^1.0.1
-  scroll_drag_detector: ^0.0.4
+  scroll_drag_detector: ^0.1.0
 
 dev_dependencies:
   flutter_test:
